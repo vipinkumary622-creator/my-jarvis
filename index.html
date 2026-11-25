@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Jarvis</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:#07111f;color:#eaf4ff;font-family:Arial,sans-serif;display:grid;place-items:center;padding:18px}
+  .app{width:min(100%,480px);background:#101f33;border:1px solid #24415f;border-radius:22px;padding:24px;text-align:center;box-shadow:0 15px 45px #0007}
+  h1{letter-spacing:3px;margin:4px 0;color:#62d8ff}
+  .orb{width:112px;height:112px;border-radius:50%;margin:24px auto;background:radial-gradient(circle,#b9f5ff 0 8%,#20b9ef 20%,#07518a 55%,#07111f 72%);box-shadow:0 0 30px #20b9ef;animation:pulse 2s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 48px #20b9ef;transform:scale(1.04)}}
+  button{border:0;border-radius:12px;padding:13px 17px;margin:6px;background:#13a8d8;color:#001522;font-weight:bold;font-size:16px}
+  button.secondary{background:#29435e;color:#eaf4ff}
+  input{width:100%;padding:14px;border-radius:12px;border:1px solid #45617c;background:#081626;color:white;font-size:16px;margin:12px 0}
+  #reply{min-height:56px;line-height:1.5;background:#081626;border-radius:12px;padding:14px;margin-top:16px;text-align:left;white-space:pre-wrap}
+  small{color:#a9c2d8;line-height:1.5;display:block;margin-top:16px}
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>J.A.R.V.I.S</h1>
+  <div class="orb" aria-hidden="true"></div>
+  <p>नमस्ते! मैं तुम्हारा छोटा Jarvis असिस्टेंट हूँ।</p>
+  <button id="listen">🎙️ बोलकर बताओ</button>
+  <input id="command" placeholder="यहाँ अपना कमांड लिखो…">
+  <button id="send">कमांड भेजो</button>
+  <button class="secondary" id="stop">आवाज़ बंद करो</button>
+  <div id="reply">Jarvis तैयार है। माइक दबाकर बोलो या कमांड लिखो।</div>
+  <small>यह शुरुआती ब्राउज़र-आधारित डेमो है। माइक के लिए इंटरनेट और Chrome की अनुमति चाहिए। यह फोन के सभी ऐप/सेटिंग्स को नियंत्रित नहीं कर सकता।</small>
+</main>
+<script>
+const replyBox=document.getElementById('reply');
+const input=document.getElementById('command');
+function speak(text){
+  replyBox.textContent=text;
+  if('speechSynthesis' in window){
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='hi-IN';
+    speechSynthesis.speak(u);
+  }
+}
+function runCommand(raw){
+  const q=raw.trim().toLowerCase();
+  if(!q){speak('कृपया कोई कमांड बोलो या लिखो।');return;}
+  if(q.includes('समय') || q.includes('time')){
+    speak('अभी समय है '+new Date().toLocaleTimeString('hi-IN',{hour:'numeric',minute:'2-digit'}));
+  }else if(q.includes('तारीख') || q.includes('date')){
+    speak('आज तारीख है '+new Date().toLocaleDateString('hi-IN'));
+  }else if(q.includes('यूट्यूब') || q.includes('youtube')){
+    speak('YouTube खोल रहा हूँ।');
+    window.open('https://www.youtube.com','_blank');
+  }else if(q.includes('गूगल') || q.includes('google')){
+    speak('Google खोल रहा हूँ।');
+    window.open('https://www.google.com','_blank');
+  }else if(q.includes('नमस्ते') || q.includes('hello') || q.includes('हेलो')){
+    speak('नमस्ते! बताओ, मैं क्या मदद करूँ?');
+  }else if(q.includes('तुम कौन') || q.includes('who are you')){
+    speak('मैं तुम्हारा शुरुआती Jarvis ब्राउज़र असिस्टेंट हूँ।');
+  }else{
+    speak('यह कमांड अभी मेरे शुरुआती डेमो में उपलब्ध नहीं है। समय, तारीख, YouTube या Google बोलकर देखो।');
+  }
+}
+document.getElementById('send').addEventListener('click',()=>runCommand(input.value));
+input.addEventListener('keydown',e=>{if(e.key==='Enter')runCommand(input.value)});
+document.getElementById('stop').addEventListener('click',()=>{if('speechSynthesis' in window)speechSynthesis.cancel();replyBox.textContent='आवाज़ रोक दी गई।';});
+document.getElementById('listen').addEventListener('click',()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){speak('इस ब्राउज़र में वॉइस पहचान उपलब्ध नहीं है। Chrome में खोलकर या कमांड लिखकर कोशिश करो।');return;}
+  const rec=new SR(); rec.lang='hi-IN'; rec.interimResults=false; rec.maxAlternatives=1;
+  rec.onstart=()=>replyBox.textContent='सुन रहा हूँ…';
+  rec.onresult=e=>{const said=e.results[0][0].transcript;input.value=said;runCommand(said);};
+  rec.onerror=()=>speak('माइक काम नहीं कर पाया। Chrome की microphone permission जाँचो या कमांड लिखो।');
+  rec.start();
+});
+</script>
+</body>
+</html>
